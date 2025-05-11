@@ -53,6 +53,29 @@ const getTopClubs = (req, res) => {
     })
 }
 
+const getTopPlayersByClubId = (req, res) => {
+    const klubiId = parseInt(req.params.id)
+
+    pool.query('SELECT nimi FROM klubid WHERE id = $1', [klubiId], (err, result) => {
+        if (err || result.rows.length === 0) {
+            return res.status(404).send({ message: 'Klubi ei leitud' })
+        }
+
+        const klubiNimi = result.rows[0].nimi
+
+        pool.query('SELECT * FROM f_klubiparimad($1)', [klubiNimi], (err2, results) => {
+            if (err2) {
+                return res.status(500).send({
+                    message: `Viga top mängijate leidmisel (${klubiNimi})`,
+                    error: err2
+                })
+            }
+
+            res.status(200).send(results.rows)
+        })
+    })
+}
+
 const addClub = (req, res) => {
     const {name, location, isUpdate, clubId} = req.body
     const update = JSON.parse(isUpdate)
@@ -96,4 +119,4 @@ const deleteClub = (req, res) => {
     })
 }
 
-module.exports = { getAllClubs, getClubById, addClub, getTopClubs, deleteClub }
+module.exports = { getAllClubs, getClubById, addClub, getTopClubs, deleteClub, getTopPlayersByClubId }
